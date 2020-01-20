@@ -39,7 +39,7 @@ def estimate_next_corner(corners):
     
     return [x1-x_offset, y1-y_offset]
 
-def get_intersect(a1, a2, b1, b2):
+def get_intersect(a1, a2, b1, b2, integer=False):
     """ 
     Returns the point of intersection of the lines passing through a2,a1 and b2,b1.
     a1: [x, y] a point on the first line
@@ -54,7 +54,49 @@ def get_intersect(a1, a2, b1, b2):
     x, y, z = np.cross(l1, l2)          # point of intersection
     if z == 0:                          # lines are parallel
         return (float('inf'), float('inf'))
+    
+    if integer:
+        return [int(x/z), int(y/z)]
     return (x/z, y/z)
+
+def get_chessboard(image, pts):
+    # copied from https://www.pyimagesearch.com/2014/05/05/building-pokedex-python-opencv-perspective-warping-step-5-6/
+    rect = np.zeros((4, 2), dtype = "float32")
+
+    rect[0] = pts[3]
+    # bottom right
+    rect[2] = pts[0]
+    # top right
+    rect[1] = pts[1]
+    rect[3] = pts[2]
+
+    # now that we have our rectangle of points, let's compute
+    # the width of our new image
+    (tl, tr, br, bl) = rect
+    widthA = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[1] - bl[1]) ** 2))
+    widthB = np.sqrt(((tr[0] - tl[0]) ** 2) + ((tr[1] - tl[1]) ** 2))
+    
+    # ...and now for the height of our new image
+    heightA = np.sqrt(((tr[0] - br[0]) ** 2) + ((tr[1] - br[1]) ** 2))
+    heightB = np.sqrt(((tl[0] - bl[0]) ** 2) + ((tl[1] - bl[1]) ** 2))
+    
+    # take the maximum of the width and height values to reach
+    # our final dimensions
+    maxWidth = max(int(widthA), int(widthB))
+    maxHeight = max(int(heightA), int(heightB))
+    
+    # construct our destination points which will be used to
+    # map the screen to a top-down, "birds eye" view
+    dst = np.array([
+        [0, 0],
+        [maxWidth - 1, 0],
+        [maxWidth - 1, maxHeight - 1],
+        [0, maxHeight - 1]], dtype = "float32")
+    
+    # calculate the perspective transform matrix and warp
+    # the perspective to grab the screen
+    M = cv2.getPerspectiveTransform(rect, dst)
+    return cv2.warpPerspective(image, M, (maxWidth, maxHeight))
 
 # For self written chessboard finder
 
