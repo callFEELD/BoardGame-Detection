@@ -24,20 +24,92 @@ def find_chessboard(image, chessboard_size):
     return None
 
 def estimate_next_corner(corners):
-    # first get the first corner
-    corner1 = corners[0][0]
-    x1 = corner1[0]
-    y1 = corner1[1]
+    """
+    Estimating the next corner based on two or more corners.
+    :param corners: list of corners (at least 2 corners)
+    :return: the estimated next corner
+    """
 
-    # get the corner before 
-    corner2 = corners[1][0]
-    x2 = corner2[0]
-    y2 = corner2[1]
+    # collect the offsets between the corners
+    # with this information the estimated corner can be calculated
+    x_offsets = []
+    y_offsets = []
+    for i in range(len(corners)-1):
+        current_corner = corners[i][0]
+        current_corner_x = current_corner[0]
+        current_corner_y = current_corner[1]
+
+        next_corner = corners[i+1][0]
+        next_corner_x = next_corner[0]
+        next_corner_y = next_corner[1]
+
+        # calculate the offset between the current_corner and the next corner
+        # and append the offset to the lists
+        y_offsets.append(next_corner_y - current_corner_y)
+        x_offsets.append(next_corner_x - current_corner_x)
     
-    y_offset = y2 - y1
-    x_offset = x2 - x1
+    # only the offset between the corners is not precise enough
+    # due to the 3d space of the corners and the image vanishing point
+    # the offsets can increase/decrease between corners
+
+    # With more than 2 corners there are more than 1 offsets.
+    # Calculating the difference (delta) between the offsets,
+    # will further estimate if the offsets will increase/decrease.
+    # This increases the percision.
+    x_delta = x_offsets[0] / x_offsets[-1]
+    y_delta = y_offsets[0] / y_offsets[-1]
+
+    first_corner_x = corners[0][0][0]
+    first_corner_y = corners[0][0][1]
     
-    return [x1-x_offset, y1-y_offset]
+    return [first_corner_x - x_offsets[0] * x_delta, first_corner_y - y_offsets[0] * y_delta]
+
+def estimate_chessboard8x8_corners(corners, display_points=False, image=None):
+    """
+    estimate the chessboard corners based on previous detected
+    corners of the cv2.findChessboardCorners() function
+    :param corners: cv2 findChessboardCorners (those are in order)
+    """
+    # NOTE: the coloring scheme is based on the cv2.drawChessboardCorners colors
+
+    # Estimate the 8 points based of the chessboard top left, top right 
+    # and bottom left and bottom right.
+    front_pink = estimate_next_corner([corners[-1], corners[-2], corners[-3]])
+    back_pink = estimate_next_corner([corners[-7], corners[-6], corners[-5]])
+
+    front_red = estimate_next_corner(corners[0:3])
+    back_red = estimate_next_corner([corners[6], corners[5], corners[4]])
+
+    red_orange1 = estimate_next_corner([corners[0], corners[7], corners[14]])
+    red_orange2 = estimate_next_corner([corners[6], corners[13], corners[20]])
+
+    pink_blue1 = estimate_next_corner([corners[-1], corners[-8], corners[-15]])
+    pink_blue2 = estimate_next_corner([corners[-7], corners[-14], corners[-21]])
+
+    # get the intersections of the 8 points and therefore get the top left, top right and bottom left and bottom right corners
+    red_intersection1 = get_intersect(back_red, front_pink, red_orange1, red_orange2, integer=True)
+    red_intersection2 = get_intersect(front_red, back_pink, red_orange1, red_orange2, integer=True)
+    pink_intersection1 = get_intersect(back_red, front_pink, pink_blue1, pink_blue2, integer=True)
+    pink_intersection2 = get_intersect(front_red, back_pink, pink_blue1, pink_blue2, integer=True)
+
+    if display_points:
+        # display the 8 points
+        cv2.circle(image, (front_pink[0], front_pink[1]), 3, 255, -1)
+        cv2.circle(image, (back_pink[0], back_pink[1]), 3, 255, -1)
+        cv2.circle(image, (front_red[0], front_red[1]), 3, 255, -1)
+        cv2.circle(image, (back_red[0], back_red[1]), 3, 255, -1)
+        cv2.circle(image, (red_orange1[0], red_orange1[1]), 3, 255, -1)
+        cv2.circle(image, (red_orange2[0], red_orange2[1]), 3, 255, -1)
+        cv2.circle(image, (pink_blue1[0], pink_blue1[1]), 3, 255, -1)
+        cv2.circle(image, (pink_blue2[0], pink_blue2[1]), 3, 255, -1)
+
+        # display intersection points
+        cv2.circle(image, (int(red_intersection1[0]), int(red_intersection1[1])), 3, (255,255,255), -1)
+        cv2.circle(image, (int(red_intersection2[0]), int(red_intersection2[1])), 3, (255,255,255), -1)
+        cv2.circle(image, (int(pink_intersection1[0]), int(pink_intersection1[1])), 3, (255,255,255), -1)
+        cv2.circle(image, (int(pink_intersection2[0]), int(pink_intersection2[1])), 3, (255,255,255), -1)
+
+    return [red_intersection1, red_intersection2, pink_intersection1, pink_intersection2]
 
 def get_intersect(a1, a2, b1, b2, integer=False):
     """ 
@@ -84,19 +156,22 @@ def get_chessboard(image, pts):
     # our final dimensions
     maxWidth = max(int(widthA), int(widthB))
     maxHeight = max(int(heightA), int(heightB))
+
+    # get the highest values
+    highest_value = max(maxWidth, maxHeight)
     
     # construct our destination points which will be used to
     # map the screen to a top-down, "birds eye" view
     dst = np.array([
         [0, 0],
-        [maxWidth - 1, 0],
-        [maxWidth - 1, maxHeight - 1],
-        [0, maxHeight - 1]], dtype = "float32")
+        [highest_value - 1, 0],
+        [highest_value - 1, highest_value - 1],
+        [0, highest_value - 1]], dtype = "float32")
     
     # calculate the perspective transform matrix and warp
     # the perspective to grab the screen
     M = cv2.getPerspectiveTransform(rect, dst)
-    return cv2.warpPerspective(image, M, (maxWidth, maxHeight))
+    return cv2.warpPerspective(image, M, (highest_value, highest_value))
 
 # For self written chessboard finder
 
