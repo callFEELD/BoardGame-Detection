@@ -11,6 +11,7 @@ Board Detection
 # Imports
 import cv2              # for general image processing
 import numpy as np      # for math operations
+from math import sqrt
 
 
 def find_chessboard(image, chessboard_size):
@@ -134,13 +135,27 @@ def get_intersect(a1, a2, b1, b2, integer=False):
 def get_chessboard(image, pts):
     # copied from https://www.pyimagesearch.com/2014/05/05/building-pokedex-python-opencv-perspective-warping-step-5-6/
     rect = np.zeros((4, 2), dtype = "float32")
-
+    
+    pts = np.array(pts)
+    # the top-left point has the smallest sum whereas the
+    # bottom-right has the largest sum
+    s = pts.sum(axis = 1)
+    rect[0] = pts[np.argmin(s)]
+    rect[2] = pts[np.argmax(s)]
+    # compute the difference between the points -- the top-right
+    # will have the minumum difference and the bottom-left will
+    # have the maximum difference
+    diff = np.diff(pts, axis = 1)
+    rect[1] = pts[np.argmin(diff)]
+    rect[3] = pts[np.argmax(diff)]
+    """
     rect[0] = pts[3]
     # bottom right
     rect[2] = pts[0]
     # top right
     rect[1] = pts[1]
     rect[3] = pts[2]
+    """
 
     # now that we have our rectangle of points, let's compute
     # the width of our new image
