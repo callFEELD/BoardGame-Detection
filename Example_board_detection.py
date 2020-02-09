@@ -15,18 +15,18 @@ import numpy as np
 import imutils
 
 fname = "data/20191113_134305.jpg"
-#fname = "data/20191113_134320.jpg" # top down view
+fname = "data/20191113_134320.jpg" # top down view
 fname = "data/20191113_134334.jpg"
-#fname = "data/20191113_134324.jpg"
+fname = "data/20191113_134324.jpg"
 #fname = "data/20191113_134307.jpg"
 
 
 # BOARD COLORS
-HSV_WHITE_SQUARE_LOWER = np.array([0, 11, 193])
-HSV_WHITE_SQUARE_UPPER = np.array([40, 80, 261])
+HSV_WHITE_SQUARE_LOWER = np.array([0, 0, 200])
+HSV_WHITE_SQUARE_UPPER = np.array([180, 255, 255])
 
-HSV_BLACK_SQUARE_LOWER = np.array([-10, 0, 48])
-HSV_BLACK_SQUARE_UPPER = np.array([121, 79, 218])
+HSV_BLACK_SQUARE_LOWER = np.array([0, 0, 0])
+HSV_BLACK_SQUARE_UPPER = np.array([255, 255, 190])
 
 
 # image loading and preperation
@@ -41,6 +41,31 @@ if corners is not None:
     cv2.drawChessboardCorners(image, (7,7), corners, 1)
     chessboard_corners = bd.estimate_chessboard8x8_corners(corners, display_points=True, image=image)
     wrapped = bd.get_chessboard(oimage, chessboard_corners)
+
+    heigth, width, _ = wrapped.shape
+
+    integer = 1
+    y, x = 0, 0
+    x_offset = 30
+    y_offset = 30
+    for i in range(8):
+        x = 0
+        for j in range(8):
+            # current square heigth and width
+            square_h = int(heigth * (i+1)/8)
+            square_w = int(width * (j+1)/8)
+            square_area = (square_h-y) * (square_w-x)
+
+            x_pos = x + x_offset
+            y_pos = y + y_offset
+            
+
+            cv2.putText(wrapped, f"{integer}", (x_pos, y_pos), cv2.FONT_HERSHEY_PLAIN, 1, 0)
+            integer = integer + 1
+
+            #cv2.imshow(f"img_x{j}_y{i}", wrapped[y:square_h, x:square_w])
+            x = square_w
+        y = square_h
 
     cv2.imwrite("result.png", wrapped)
 
