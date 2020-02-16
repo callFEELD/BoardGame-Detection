@@ -4,6 +4,8 @@
 import numpy as np
 
 
+DEBUG = False
+
 """Board Square Colors
 """
 # White square colors
