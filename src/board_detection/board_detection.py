@@ -13,13 +13,13 @@ import cv2              # for general image processing
 import numpy as np      # for math operations
 
 
-from config import \
+from config import DEBUG,\
     HSV_WHITE_SQUARE_LOWER, HSV_WHITE_SQUARE_UPPER, \
     HSV_BLACK_SQUARE_LOWER, HSV_BLACK_SQUARE_UPPER, \
     SQUARE_COLOR_THRESHOLD
 
 from src import ColorDetector
-from src.CheckersBoard import CheckerBoardSquare
+from src.CheckersBoard import SquareColor, Square
 
 
 def find_chessboard_corners(image, chessboard_size):
@@ -256,23 +256,27 @@ def get_chessboard_squares(chessboard_perspective, size=(8, 8)):
 
             # only black was detected
             if isBlack and not isWhite:
-                squares.append(CheckerBoardSquare.BLACK_SQUARE)
+                squares.append(
+                    Square(color=SquareColor.BLACK)
+                )
             # only white was detected
             elif not isBlack and isWhite:
-                squares.append(CheckerBoardSquare.WHITE_SQUARE)
+                squares.append(
+                    Square(color=SquareColor.WHITE)
+                )
             # both color were detected or none
             else:
-                squares.append(CheckerBoardSquare.UNDEFINED)
+                squares.append(
+                    Square(color=SquareColor.UNDEFINED)
+                )
 
-            """
-            cv2.imshow("Undefined square", chessboard_perspective[y:square_h, x:square_w])
-            cv2.imshow("Undefined square white", white_color_mask[y:square_h, x:square_w])
-            cv2.imshow("Undefined square black", black_color_mask[y:square_h, x:square_w])
-            print(squares[-1])
+            if DEBUG:
+                cv2.imshow("Undefined square", chessboard_perspective[y:square_h, x:square_w])
+                cv2.imshow("Undefined square white", white_color_mask[y:square_h, x:square_w])
+                cv2.imshow("Undefined square black", black_color_mask[y:square_h, x:square_w])
 
-            if cv2.waitKey(0) & 0xff == 27:
-                    cv2.destroyAllWindows()
-            """
+                if cv2.waitKey(0) & 0xff == 27:
+                        cv2.destroyAllWindows()
             x = square_w
         y = square_h
 
