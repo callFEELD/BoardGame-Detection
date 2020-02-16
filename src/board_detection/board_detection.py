@@ -19,7 +19,7 @@ from config import DEBUG,\
     SQUARE_COLOR_THRESHOLD
 
 from src import ColorDetector
-from src.CheckersBoard import SquareColor, Square
+from src.CheckersBoard import SquareColor
 
 
 def find_chessboard_corners(image, chessboard_size):
@@ -257,17 +257,17 @@ def get_chessboard_squares(chessboard_perspective, size=(8, 8)):
             # only black was detected
             if isBlack and not isWhite:
                 squares.append(
-                    Square(color=SquareColor.BLACK)
+                    SquareColor.BLACK
                 )
             # only white was detected
             elif not isBlack and isWhite:
                 squares.append(
-                    Square(color=SquareColor.WHITE)
+                    SquareColor.WHITE
                 )
             # both color were detected or none
             else:
                 squares.append(
-                    Square(color=SquareColor.UNDEFINED)
+                    SquareColor.UNDEFINED
                 )
 
             if DEBUG:
