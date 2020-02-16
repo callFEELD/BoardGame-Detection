@@ -19,10 +19,21 @@ class CheckersState:
     WHITE_KING = -2
 
 
-class CheckerBoardSquare:
+class SquareColor:
     """
     enum of checkr board square colors
     """
-    BLACK_SQUARE = 1
-    WHITE_SQUARE = -1
-    UNDEFINED = 0
+    BLACK = 1
+    WHITE = 0
+    UNDEFINED = -1
+
+
+class Square:
+    def __init__(self, color=SquareColor.WHITE):
+        self.color: SquareColor = color
+
+    def get_color(self):
+        return self.color
+
+    def set_color(self, color: SquareColor):
+        self.color = color
