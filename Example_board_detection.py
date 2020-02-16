@@ -8,37 +8,30 @@ Example Board Detection
 """
 
 # Imports
+from config import \
+    HSV_WHITE_SQUARE_LOWER, HSV_WHITE_SQUARE_UPPER, \
+    HSV_BLACK_SQUARE_LOWER, HSV_BLACK_SQUARE_UPPER
+
 from src.board_detection import board_detection as bd
 from src import ColorDetector
 import cv2
-import numpy as np
-import imutils
 
 fname = "data/20191113_134305.jpg"
-fname = "data/20191113_134320.jpg" # top down view
+fname = "data/20191113_134320.jpg"  # top down view
 fname = "data/20191113_134334.jpg"
 fname = "data/20191113_134324.jpg"
-#fname = "data/20191113_134307.jpg"
-
-
-# BOARD COLORS
-HSV_WHITE_SQUARE_LOWER = np.array([0, 0, 200])
-HSV_WHITE_SQUARE_UPPER = np.array([180, 255, 255])
-
-HSV_BLACK_SQUARE_LOWER = np.array([0, 0, 0])
-HSV_BLACK_SQUARE_UPPER = np.array([255, 255, 190])
-
+# fname = "data/20191113_134307.jpg"
 
 # image loading and preperation
 image = cv2.imread(fname)
-image = cv2.resize(image,(int(4032/4), int(2268/4)))
+image = cv2.resize(image, (int(4032/4), int(2268/4)))
 oimage = image.copy()
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 # finding chessboard
-corners = bd.find_chessboard(gray, (7,7))
+corners = bd.find_chessboard(gray, (7, 7))
 if corners is not None:
-    cv2.drawChessboardCorners(image, (7,7), corners, 1)
+    cv2.drawChessboardCorners(image, (7, 7), corners, 1)
     chessboard_corners = bd.estimate_chessboard8x8_corners(corners, display_points=True, image=image)
     wrapped = bd.get_chessboard(oimage, chessboard_corners)
 
@@ -58,12 +51,12 @@ if corners is not None:
 
             x_pos = x + x_offset
             y_pos = y + y_offset
-            
+
 
             cv2.putText(wrapped, f"{integer}", (x_pos, y_pos), cv2.FONT_HERSHEY_PLAIN, 1, 0)
             integer = integer + 1
 
-            #cv2.imshow(f"img_x{j}_y{i}", wrapped[y:square_h, x:square_w])
+            # cv2.imshow(f"img_x{j}_y{i}", wrapped[y:square_h, x:square_w])
             x = square_w
         y = square_h
 
@@ -75,9 +68,9 @@ if corners is not None:
     cv2.imshow("Black Color Detector", black_color_mask)
 
 # Show results
-cv2.imshow('Corners and Lines',image)
-cv2.imshow('Chessboard',wrapped)
+cv2.imshow('Corners and Lines', image)
+cv2.imshow('Chessboard', wrapped)
 
-# De-allocate any associated memory usage   
-if cv2.waitKey(0) & 0xff == 27:  
-    cv2.destroyAllWindows()  
+# De-allocate any associated memory usage
+if cv2.waitKey(0) & 0xff == 27:
+    cv2.destroyAllWindows()

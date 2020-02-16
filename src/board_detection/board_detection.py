@@ -11,7 +11,6 @@ Board Detection
 # Imports
 import cv2              # for general image processing
 import numpy as np      # for math operations
-from math import sqrt
 
 
 def find_chessboard(image, chessboard_size):
@@ -19,10 +18,11 @@ def find_chessboard(image, chessboard_size):
 
     ret, corners = cv2.findChessboardCorners(image, chessboard_size)
     #    If found, add object points, image points (after refining them)
-    if ret == True:
-        cv2.cornerSubPix(image, corners, (11,11), (-1,-1), criteria)
+    if ret:
+        cv2.cornerSubPix(image, corners, (11, 11), (-1, -1), criteria)
         return corners
     return None
+
 
 def estimate_next_corner(corners):
     """
@@ -48,7 +48,7 @@ def estimate_next_corner(corners):
         # and append the offset to the lists
         y_offsets.append(next_corner_y - current_corner_y)
         x_offsets.append(next_corner_x - current_corner_x)
-    
+
     # only the offset between the corners is not precise enough
     # due to the 3d space of the corners and the image vanishing point
     # the offsets can increase/decrease between corners
@@ -62,8 +62,9 @@ def estimate_next_corner(corners):
 
     first_corner_x = corners[0][0][0]
     first_corner_y = corners[0][0][1]
-    
+
     return [first_corner_x - x_offsets[0] * x_delta, first_corner_y - y_offsets[0] * y_delta]
+
 
 def estimate_chessboard8x8_corners(corners, display_points=False, image=None):
     """
@@ -71,9 +72,10 @@ def estimate_chessboard8x8_corners(corners, display_points=False, image=None):
     corners of the cv2.findChessboardCorners() function
     :param corners: cv2 findChessboardCorners (those are in order)
     """
-    # NOTE: the coloring scheme is based on the cv2.drawChessboardCorners colors
+    # NOTE: the coloring scheme is based on the
+    # cv2.drawChessboardCorners colors
 
-    # Estimate the 8 points based of the chessboard top left, top right 
+    # Estimate the 8 points based of the chessboard top left, top right
     # and bottom left and bottom right.
     front_pink = estimate_next_corner([corners[-1], corners[-2], corners[-3]])
     back_pink = estimate_next_corner([corners[-7], corners[-6], corners[-5]])
@@ -87,7 +89,8 @@ def estimate_chessboard8x8_corners(corners, display_points=False, image=None):
     pink_blue1 = estimate_next_corner([corners[-1], corners[-8], corners[-15]])
     pink_blue2 = estimate_next_corner([corners[-7], corners[-14], corners[-21]])
 
-    # get the intersections of the 8 points and therefore get the top left, top right and bottom left and bottom right corners
+    # get the intersections of the 8 points and therefore get the top left,
+    # top right and bottom left and bottom right corners
     red_intersection1 = get_intersect(back_red, front_pink, red_orange1, red_orange2, integer=True)
     red_intersection2 = get_intersect(front_red, back_pink, red_orange1, red_orange2, integer=True)
     pink_intersection1 = get_intersect(back_red, front_pink, pink_blue1, pink_blue2, integer=True)
@@ -112,9 +115,11 @@ def estimate_chessboard8x8_corners(corners, display_points=False, image=None):
 
     return [red_intersection1, red_intersection2, pink_intersection1, pink_intersection2]
 
+
 def get_intersect(a1, a2, b1, b2, integer=False):
-    """ 
-    Returns the point of intersection of the lines passing through a2,a1 and b2,b1.
+    """
+    Returns the point of intersection of the lines passing
+    through a2,a1 and b2,b1.
     a1: [x, y] a point on the first line
     a2: [x, y] another point on the first line
     b1: [x, y] a point on the second line
@@ -127,25 +132,27 @@ def get_intersect(a1, a2, b1, b2, integer=False):
     x, y, z = np.cross(l1, l2)          # point of intersection
     if z == 0:                          # lines are parallel
         return (float('inf'), float('inf'))
-    
+
     if integer:
         return [int(x/z), int(y/z)]
     return (x/z, y/z)
 
+
 def get_chessboard(image, pts):
     # copied from https://www.pyimagesearch.com/2014/05/05/building-pokedex-python-opencv-perspective-warping-step-5-6/
-    rect = np.zeros((4, 2), dtype = "float32")
-    
+
+    rect = np.zeros((4, 2), dtype="float32")
+
     pts = np.array(pts)
     # the top-left point has the smallest sum whereas the
     # bottom-right has the largest sum
-    s = pts.sum(axis = 1)
+    s = pts.sum(axis=1)
     rect[0] = pts[np.argmin(s)]
     rect[2] = pts[np.argmax(s)]
     # compute the difference between the points -- the top-right
     # will have the minumum difference and the bottom-left will
     # have the maximum difference
-    diff = np.diff(pts, axis = 1)
+    diff = np.diff(pts, axis=1)
     rect[1] = pts[np.argmin(diff)]
     rect[3] = pts[np.argmax(diff)]
     """
@@ -162,11 +169,11 @@ def get_chessboard(image, pts):
     (tl, tr, br, bl) = rect
     widthA = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[1] - bl[1]) ** 2))
     widthB = np.sqrt(((tr[0] - tl[0]) ** 2) + ((tr[1] - tl[1]) ** 2))
-    
+
     # ...and now for the height of our new image
     heightA = np.sqrt(((tr[0] - br[0]) ** 2) + ((tr[1] - br[1]) ** 2))
     heightB = np.sqrt(((tl[0] - bl[0]) ** 2) + ((tl[1] - bl[1]) ** 2))
-    
+
     # take the maximum of the width and height values to reach
     # our final dimensions
     maxWidth = max(int(widthA), int(widthB))
@@ -174,29 +181,39 @@ def get_chessboard(image, pts):
 
     # get the highest values
     highest_value = max(maxWidth, maxHeight)
-    
+
     # construct our destination points which will be used to
     # map the screen to a top-down, "birds eye" view
     dst = np.array([
         [0, 0],
         [highest_value - 1, 0],
         [highest_value - 1, highest_value - 1],
-        [0, highest_value - 1]], dtype = "float32")
-    
+        [0, highest_value - 1]], dtype="float32")
+
     # calculate the perspective transform matrix and warp
     # the perspective to grab the screen
     M = cv2.getPerspectiveTransform(rect, dst)
     return cv2.warpPerspective(image, M, (highest_value, highest_value))
 
+
 # For self written chessboard finder
 
-# detection of coners 
+
 def get_corners(image):
+    """detection of corners inside an image
+
+    Arguments:
+        image {opencv image} -- input image
+
+    Returns:
+        list -- corners
+    """
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    MAX_CORNERS:int = 1000
-    QUALITY_LEVEL:float = 0.001
-    MIN_DISTANCE:int = 15
+    MAX_CORNERS: int = 1000
+    QUALITY_LEVEL: float = 0.001
+    MIN_DISTANCE: int = 15
     return cv2.goodFeaturesToTrack(gray, MAX_CORNERS, QUALITY_LEVEL, MIN_DISTANCE, useHarrisDetector=True)
+
 
 # getting lines based on Hough Lines
 def get_lines(image):
@@ -207,8 +224,9 @@ def get_lines(image):
     max_line_gap = 100000  # maximum gap in pixels between connectable line segments
     lines = cv2.HoughLinesP(image, rho, theta, threshold, np.array([]),
                         min_line_length, max_line_gap)
-    
+
     return lines
+
 
 def get_intersections(lines):
     ret_intersections = []
@@ -221,11 +239,12 @@ def get_intersections(lines):
 
                         if px != float('inf') and py != float('inf'):
                             ret_intersections.append([px, py])
-    
+
     return ret_intersections
 
+
 def is_close_to(point1, point2):
-    diff = 4 # 4pixels
+    diff = 4  # 4pixels
 
     p1x, p1y = point1
     p2x, p2y = point2
@@ -234,36 +253,38 @@ def is_close_to(point1, point2):
         return True
     return False
 
+
 def find_lines_with_corners(img, lines, corners):
-    max_diff = 2 # 4 pixels
+    max_diff = 2  # 4 pixels
     """
     # get the x positions of all corners
     x_corners = [corner.ravel()[0] for corner in corners]
     y_corners = [corner.ravel()[0] for corner in corners]
 
-    # get possible y's of the y corners based on the linera function of the line
+    # get possible y's of the y corners based on the
+    # linera function of the line
     possible_ys = np.interp(x_corners, [x1, x2], [y1, y2])
     """
 
     ret_lines = []
     if lines is not None:
         for line in lines:
-            for x1,y1,x2,y2 in line:
+            for x1, y1, x2, y2 in line:
 
                 xp = [x1, x2]
                 fp = [y1, y2]
 
                 amount = 0
                 for corner in corners:
-                    x,y = corner
+                    x, y = corner
 
                     # check if corner is on the line
                     ty = np.interp(x, xp, fp)
 
                     if abs(int(ty)-y) <= max_diff:
-                        cv2.circle(img,(x,int(ty)),1,(255,255,0),-1)
+                        cv2.circle(img,(x, int(ty)), 1,(255, 255, 0), -1)
                         amount += 1
 
-                if amount >= 5: #and amount <= 12:
+                if amount >= 5:
                     ret_lines.append(line)
     return ret_lines

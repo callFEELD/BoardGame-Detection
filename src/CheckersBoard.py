@@ -56,7 +56,7 @@ class CheckersBoard:
             for _ in range(self.SIZE):
                 row.append(CheckersState.EMPTY)
             self.board.append(row)
-    
+
     def reset(self):
         """
         This resets the board to the beginning (empty) state with no figures
