@@ -10,7 +10,8 @@ Color Detector
 import cv2
 import numpy as np
 
-KERNEL = np.ones((3,3), np.uint8)
+KERNEL = np.ones((3, 3), np.uint8)
+
 
 def get_color_mask(image, hsv_color_lower, hsv_color_upper):
     # converting to HUE color space for color detection
@@ -23,6 +24,10 @@ def get_color_mask(image, hsv_color_lower, hsv_color_upper):
 
     return color_mask
 
+
 def has_area_color(color_mask, threshold):
-    square_area = color_mask[0] * color_mask[1]
-    return True if cv2.countNonZero(color_mask) >= square_area * threshold else False
+    square_area = color_mask.shape[0] * color_mask.shape[1]
+
+    if cv2.countNonZero(color_mask) >= square_area * threshold:
+        return True
+    return False
