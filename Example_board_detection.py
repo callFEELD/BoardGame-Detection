@@ -9,30 +9,20 @@ Example Board Detection
 
 # Imports
 from src.board_detection import board_detection as bd
+from config import DEBUG
 
 import cv2
-import time
 
 
-DEBUG = True
+file_name = "data/20191113_134324.jpg"
 
-
-fname = "data/20191113_134305.jpg"
-fname = "data/20191113_134320.jpg"  # top down view
-fname = "data/20191113_134334.jpg"
-fname = "data/20191113_134324.jpg"
-# fname = "data/20191113_134307.jpg"
-
-start_time = time.time()
-# image loading and preperation
-image = cv2.imread(fname)
+# read the image and make it smaller
+image = cv2.imread(file_name)
 image = cv2.resize(image, (int(4032/4), int(2268/4)))
 oimage = image.copy()
 
 # finding the chessboard inside an image
 corners = bd.find_chessboard_corners(image, (7, 7))
-end_time = time.time()
-print(end_time - start_time)
 
 # check if there are actuall chessboard corners
 if corners is not None:
@@ -50,9 +40,12 @@ if corners is not None:
     # get the individual squares of the chessboard
     squares = bd.get_chessboard_squares(wrapped, size=(8, 8))
 
-    print(squares)
+    for pos, square in enumerate(squares):
+        if int(pos / 8) == 0:
+            print(f"| {square.get_color()}", end='')
+        else:
+            print(f"| {square.get_color()}", end='')
 
-print(time.time()-start_time)
 # Show results
 cv2.imshow('Corners and Lines', image)
 cv2.imshow('Chessboard', wrapped)
