@@ -4,6 +4,7 @@ import unittest
 import cv2
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
+
 from src.board_detection.BoardDetector import BoardDetector
 
 
