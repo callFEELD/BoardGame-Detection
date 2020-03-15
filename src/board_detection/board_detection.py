@@ -104,24 +104,42 @@ def estimate_chessboard8x8_corners(corners, display_points=False, image=None):
 
     # Estimate the 8 points based of the chessboard top left, top right
     # and bottom left and bottom right.
-    front_pink = estimate_next_corner([corners[-1], corners[-2], corners[-3]])
-    back_pink = estimate_next_corner([corners[-7], corners[-6], corners[-5]])
+    front_pink = estimate_next_corner([
+        corners[-1], corners[-2], corners[-3]
+    ])
+    back_pink = estimate_next_corner([
+        corners[-7], corners[-6], corners[-5]
+    ])
 
     front_red = estimate_next_corner(corners[0:3])
-    back_red = estimate_next_corner([corners[6], corners[5], corners[4]])
+    back_red = estimate_next_corner([
+        corners[6], corners[5], corners[4]
+    ])
 
-    red_orange1 = estimate_next_corner([corners[0], corners[7], corners[14]])
-    red_orange2 = estimate_next_corner([corners[6], corners[13], corners[20]])
+    red_orange1 = estimate_next_corner([
+        corners[0], corners[7], corners[14]
+    ])
+    red_orange2 = estimate_next_corner([
+        corners[6], corners[13], corners[20]
+    ])
 
-    pink_blue1 = estimate_next_corner([corners[-1], corners[-8], corners[-15]])
-    pink_blue2 = estimate_next_corner([corners[-7], corners[-14], corners[-21]])
+    pink_blue1 = estimate_next_corner([
+        corners[-1], corners[-8], corners[-15]
+    ])
+    pink_blue2 = estimate_next_corner([
+        corners[-7], corners[-14], corners[-21]
+    ])
 
     # get the intersections of the 8 points and therefore get the top left,
     # top right and bottom left and bottom right corners
-    red_intersection1 = get_intersect(back_red, front_pink, red_orange1, red_orange2, integer=True)
-    red_intersection2 = get_intersect(front_red, back_pink, red_orange1, red_orange2, integer=True)
-    pink_intersection1 = get_intersect(back_red, front_pink, pink_blue1, pink_blue2, integer=True)
-    pink_intersection2 = get_intersect(front_red, back_pink, pink_blue1, pink_blue2, integer=True)
+    red_intersection1 = get_intersect(back_red, front_pink,
+                                      red_orange1, red_orange2, integer=True)
+    red_intersection2 = get_intersect(front_red, back_pink,
+                                      red_orange1, red_orange2, integer=True)
+    pink_intersection1 = get_intersect(back_red, front_pink,
+                                       pink_blue1, pink_blue2, integer=True)
+    pink_intersection2 = get_intersect(front_red, back_pink,
+                                       pink_blue1, pink_blue2, integer=True)
 
     if display_points:
         # display the 8 points
@@ -135,12 +153,21 @@ def estimate_chessboard8x8_corners(corners, display_points=False, image=None):
         cv2.circle(image, (pink_blue2[0], pink_blue2[1]), 3, 255, -1)
 
         # display intersection points
-        cv2.circle(image, (int(red_intersection1[0]), int(red_intersection1[1])), 3, (255,255,255), -1)
-        cv2.circle(image, (int(red_intersection2[0]), int(red_intersection2[1])), 3, (255,255,255), -1)
-        cv2.circle(image, (int(pink_intersection1[0]), int(pink_intersection1[1])), 3, (255,255,255), -1)
-        cv2.circle(image, (int(pink_intersection2[0]), int(pink_intersection2[1])), 3, (255,255,255), -1)
+        cv2.circle(image, (int(red_intersection1[0]),
+                           int(red_intersection1[1])), 3, (255, 255, 255), -1)
+        cv2.circle(image, (int(red_intersection2[0]),
+                           int(red_intersection2[1])), 3, (255, 255, 255), -1)
+        cv2.circle(image, (int(pink_intersection1[0]),
+                           int(pink_intersection1[1])), 3, (255, 255, 255), -1)
+        cv2.circle(image, (int(pink_intersection2[0]),
+                           int(pink_intersection2[1])), 3, (255, 255, 255), -1)
 
-    return [red_intersection1, red_intersection2, pink_intersection1, pink_intersection2]
+    return [
+        red_intersection1,
+        red_intersection2,
+        pink_intersection1,
+        pink_intersection2
+    ]
 
 
 def get_intersect(a1, a2, b1, b2, integer=False):
@@ -250,34 +277,105 @@ def get_chessboard_squares(chessboard_perspective, size=(8, 8)):
             isWhite = ColorDetector.has_area_color(
                 white_color_mask[y:square_h, x:square_w],
                 SQUARE_COLOR_THRESHOLD)
-            isBlack = ColorDetector.has_area_color(
-                black_color_mask[y:square_h, x:square_w],
-                SQUARE_COLOR_THRESHOLD)
 
-            # only black was detected
-            if isBlack and not isWhite:
-                squares.append(
-                    SquareColor.BLACK
-                )
-            # only white was detected
-            elif not isBlack and isWhite:
+            if isWhite:
                 squares.append(
                     SquareColor.WHITE
                 )
             # both color were detected or none
             else:
                 squares.append(
-                    SquareColor.UNDEFINED
+                    SquareColor.BLACK
                 )
 
             if DEBUG:
+                print(squares[-1])
                 cv2.imshow("Undefined square", chessboard_perspective[y:square_h, x:square_w])
                 cv2.imshow("Undefined square white", white_color_mask[y:square_h, x:square_w])
-                cv2.imshow("Undefined square black", black_color_mask[y:square_h, x:square_w])
-
                 if cv2.waitKey(0) & 0xff == 27:
-                        cv2.destroyAllWindows()
+                    cv2.destroyAllWindows()
             x = square_w
         y = square_h
 
     return squares
+
+
+def get_corners(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    MAX_CORNERS:int = 1000
+    QUALITY_LEVEL:float = 0.001
+    MIN_DISTANCE:int = 15
+    return cv2.goodFeaturesToTrack(gray, MAX_CORNERS, QUALITY_LEVEL, MIN_DISTANCE, useHarrisDetector=True)
+
+
+# getting lines based on Hough Lines
+def get_lines(image):
+    rho = 1  # distance resolution in pixels of the Hough grid
+    theta = np.pi / 180  # angular resolution in radians of the Hough grid
+    threshold = 75  # minimum number of votes (intersections in Hough grid cell)
+    min_line_length = 100  # minimum number of pixels making up a line
+    max_line_gap = 100000  # maximum gap in pixels between connectable line segments
+    lines = cv2.HoughLinesP(image, rho, theta, threshold, np.array([]),
+                        min_line_length, max_line_gap)
+
+    return lines
+
+
+def get_intersections(lines):
+    ret_intersections = []
+    if lines is not None:
+        for line in lines:
+            for x1,y1,x2,y2 in line:
+                for nline in lines:
+                    for nx1,ny1,nx2,ny2 in nline:
+                        px, py = get_intersect([x1, y1], [x2, y2], [nx1, ny1], [nx2, ny2])
+
+                        if px != float('inf') and py != float('inf'):
+                            ret_intersections.append([px, py])
+
+    return ret_intersections
+
+
+def is_close_to(point1, point2):
+    diff = 4 # 4pixels
+
+    p1x, p1y = point1
+    p2x, p2y = point2
+
+    if abs(p1x - p2x) <= diff and abs(p1y - p2y) <= diff:
+        return True
+    return False
+
+
+def find_lines_with_corners(img, lines, corners):
+    max_diff = 2 # 4 pixels
+    """
+    # get the x positions of all corners
+    x_corners = [corner.ravel()[0] for corner in corners]
+    y_corners = [corner.ravel()[0] for corner in corners]
+    # get possible y's of the y corners based on the linera function of the line
+    possible_ys = np.interp(x_corners, [x1, x2], [y1, y2])
+    """
+
+    ret_lines = []
+    if lines is not None:
+        for line in lines:
+            for x1,y1,x2,y2 in line:
+
+                xp = [x1, x2]
+                fp = [y1, y2]
+
+                amount = 0
+                for corner in corners:
+                    x,y = corner
+
+                    # check if corner is on the line
+                    ty = np.interp(x, xp, fp)
+
+                    if abs(int(ty)-y) <= max_diff:
+                        cv2.circle(img,(x,int(ty)),1,(255,255,0),-1)
+                        amount += 1
+
+                if amount >= 5: #and amount <= 12:
+                    ret_lines.append(line)
+    return ret_lines
