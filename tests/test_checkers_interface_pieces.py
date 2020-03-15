@@ -1,8 +1,4 @@
-import sys
-import os
 import unittest
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
-
 from src.checkers_interface import Piece,\
     InvalidPlayer, InvalidPiecePosition
 
