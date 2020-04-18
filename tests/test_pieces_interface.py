@@ -1,5 +1,5 @@
 import unittest
-from src.checkers_interface import Piece,\
+from src.interface import Piece,\
     InvalidPlayer, InvalidPiecePosition
 
 
@@ -54,6 +54,20 @@ class TestPieceInterface(unittest.TestCase):
         self.assertEqual(piece.get_player(), player)
         self.assertEqual(piece.get_position(), position)
         self.assertEqual(piece.is_king(), king)
+
+    def test_to_dict(self):
+        position = 25
+        player = 2
+        king = True
+        piece = Piece(position=position, player=player, king=king)
+
+        correct_dict = {
+            "position": position,
+            "player": player,
+            "king": king
+        }
+
+        self.assertEqual(piece.to_dict(), correct_dict)
 
 
 if __name__ == "__main__":

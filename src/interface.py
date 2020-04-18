@@ -34,6 +34,13 @@ class Piece:
         self.set_player(player)
         self.set_king(king)
 
+    def to_dict(self):
+        return {
+            "position": self.position,
+            "player": self.player,
+            "king": self.king
+        }
+
     def get_position(self):
         return self.position
 
