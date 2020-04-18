@@ -13,15 +13,6 @@ import cv2              # for general image processing
 import numpy as np      # for math operations
 
 
-from config import DEBUG,\
-    HSV_WHITE_SQUARE_LOWER, HSV_WHITE_SQUARE_UPPER, \
-    HSV_BLACK_SQUARE_LOWER, HSV_BLACK_SQUARE_UPPER, \
-    SQUARE_COLOR_THRESHOLD
-
-from src import ColorDetector
-from src.CheckersBoard import SquareColor
-
-
 def find_lines(image, rho, theta, threshold):
     """Finding lines based on a hough transformation for lines
 
