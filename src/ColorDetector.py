@@ -10,7 +10,7 @@ Color Detector
 import cv2
 import numpy as np
 
-KERNEL = np.ones((3, 3), np.uint8)
+KERNEL = np.ones((5, 5), np.uint8)
 
 
 def get_color_mask(image, hsv_color_lower, hsv_color_upper):
@@ -31,3 +31,10 @@ def has_area_color(color_mask, threshold):
     if cv2.countNonZero(color_mask) >= square_area * threshold:
         return True
     return False
+
+
+def threshold_mask(image, thresh, threshold_type=cv2.THRESH_BINARY):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    ret, threshold = cv2.threshold(gray, thresh, 255, threshold_type)
+    return threshold
