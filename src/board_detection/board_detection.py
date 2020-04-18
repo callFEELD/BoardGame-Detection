@@ -22,152 +22,111 @@ from src import ColorDetector
 from src.CheckersBoard import SquareColor
 
 
-def find_chessboard_corners(image, chessboard_size):
-    """Finding chessboard corners inside an image.
-    This function is using the opencv findChessboardCorners
-    function.
+def find_lines(image, rho, theta, threshold):
+    """Finding lines based on a hough transformation for lines
 
     Arguments:
-        image {cv2 image} -- opencv image
-        chessboard_size {tuple} -- size of the chessboard example: (7, 7)
-        for a 7x7 board
+        image {[type]} -- [description]
+        rho {[type]} -- [description]
+        theta {[type]} -- [description]
+        threshold {[type]} -- [description]
 
     Returns:
-        list -- Ordered list of the corners. This function is returning the
-        findChessboardCroners results.
+        cv2.HoughLines --  the found lines
     """
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+    kernel = np.ones((3, 3), np.uint8)
+    image = cv2.dilate(image, kernel, iterations=1)
+    return cv2.HoughLines(image, rho, theta, threshold)
 
-    # convert the image to a greyscale one
+
+def filter_lines(lines, rho_threshold, theta_threshold):
+    """Filtering lines which are close to each other
+
+    Arguments:
+        lines {cv2.HoughLines} -- Found cv2.HoughLines
+        rho_threshold {[type]} -- [description]
+        theta_threshold {[type]} -- [description]
+
+    Returns:
+        cv2.HoughLines -- filtered hough lines
+    """
+    if lines is None:
+        return None
+
+    similar_lines = {i : [] for i in range(len(lines))}
+
+    for i in range(len(lines)):
+        for j in range(len(lines)):
+            if i == j:
+                continue
+
+            rho_i,theta_i = lines[i][0]
+            rho_j,theta_j = lines[j][0]
+
+            if abs(rho_i - rho_j) < rho_threshold and abs(theta_i - theta_j) < theta_threshold:
+                similar_lines[i].append(j)
+
+    indices = [i for i in range(len(lines))]
+    indices.sort(key=lambda x : len(similar_lines[x]))
+
+    # line flags is the base for the filtering
+    line_flags = len(lines)*[True]
+    for i in range(len(lines) - 1):
+        if not line_flags[indices[i]]: # if we already disregarded the ith element in the ordered list then we don't care (we will not delete anything based on it and we will never reconsider using this line again)
+            continue
+
+        for j in range(i + 1, len(lines)): # we are only considering those elements that had less similar line
+            if not line_flags[indices[j]]: # and only if we have not disregarded them already
+                continue
+
+            rho_i,theta_i = lines[indices[i]][0]
+            rho_j,theta_j = lines[indices[j]][0]
+            if abs(rho_i - rho_j) < rho_threshold and abs(theta_i - theta_j) < theta_threshold:
+                line_flags[indices[j]] = False
+
+    filtered_lines = []
+    for i in range(len(lines)): # filtering
+        if line_flags[i]:
+            filtered_lines.append(lines[i])
+    return filtered_lines
+
+
+def find_corners(image, max_corners, quality_level, min_distance):
+    """Finds corners inside an image based on cv2.goodFeaturesToTrack with Harris
+
+    Arguments:
+        image {[type]} -- [description]
+
+    Returns:
+        [type] -- [description]
+    """
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    # finding the chessboard corners using the buildin opencv function
-    ret, corners = cv2.findChessboardCorners(gray, chessboard_size)
-
-    # If found, add object points, image points (after refining them)
-    if ret:
-        cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-        return corners
-    return None
+    return cv2.goodFeaturesToTrack(
+        gray, max_corners, quality_level, min_distance, useHarrisDetector=True
+    )
 
 
-def estimate_next_corner(corners):
-    """
-    Estimating the next corner based on two or more corners.
-    :param corners: list of corners (at least 2 corners)
-    :return: the estimated next corner
-    """
+def divide_chessboard(chessboard_perspective, size=(8, 8)):
+    width = chessboard_perspective.shape[0]
+    height = chessboard_perspective.shape[1]
+    x_step = width/size[0]
+    y_step = height/size[1]
 
-    # collect the offsets between the corners
-    # with this information the estimated corner can be calculated
-    x_offsets = []
-    y_offsets = []
-    for i in range(len(corners)-1):
-        current_corner = corners[i][0]
-        current_corner_x = current_corner[0]
-        current_corner_y = current_corner[1]
+    images = []
+    positions = []
+    for x in range(size[0]):
+        row = []
+        row_pos = []
+        for y in range(size[1]):
+            row.append(
+                chessboard_perspective[int(y_step*y):int(y_step*(y+1)), int(x_step*x):int(x_step*(x+1))]
+            )
+            row_pos.append({"x":[int(y_step*y), int(y_step*(y+1))], "y": [int(x_step*x), int(x_step*(x+1))]})
+        images.append(row)
+        positions.append(row_pos)
+    return images, positions
 
-        next_corner = corners[i+1][0]
-        next_corner_x = next_corner[0]
-        next_corner_y = next_corner[1]
-
-        # calculate the offset between the current_corner and the next corner
-        # and append the offset to the lists
-        y_offsets.append(next_corner_y - current_corner_y)
-        x_offsets.append(next_corner_x - current_corner_x)
-
-    # only the offset between the corners is not precise enough
-    # due to the 3d space of the corners and the image vanishing point
-    # the offsets can increase/decrease between corners
-
-    # With more than 2 corners there are more than 1 offsets.
-    # Calculating the difference (delta) between the offsets,
-    # will further estimate if the offsets will increase/decrease.
-    # This increases the percision.
-    x_delta = x_offsets[0] / x_offsets[-1]
-    y_delta = y_offsets[0] / y_offsets[-1]
-
-    first_corner_x = corners[0][0][0]
-    first_corner_y = corners[0][0][1]
-
-    return [first_corner_x - x_offsets[0] * x_delta, first_corner_y - y_offsets[0] * y_delta]
-
-
-def estimate_chessboard8x8_corners(corners, display_points=False, image=None):
-    """
-    estimate the chessboard corners based on previous detected
-    corners of the cv2.findChessboardCorners() function
-    :param corners: cv2 findChessboardCorners (those are in order)
-    """
-    # NOTE: the coloring scheme is based on the
-    # cv2.drawChessboardCorners colors
-
-    # Estimate the 8 points based of the chessboard top left, top right
-    # and bottom left and bottom right.
-    front_pink = estimate_next_corner([
-        corners[-1], corners[-2], corners[-3]
-    ])
-    back_pink = estimate_next_corner([
-        corners[-7], corners[-6], corners[-5]
-    ])
-
-    front_red = estimate_next_corner(corners[0:3])
-    back_red = estimate_next_corner([
-        corners[6], corners[5], corners[4]
-    ])
-
-    red_orange1 = estimate_next_corner([
-        corners[0], corners[7], corners[14]
-    ])
-    red_orange2 = estimate_next_corner([
-        corners[6], corners[13], corners[20]
-    ])
-
-    pink_blue1 = estimate_next_corner([
-        corners[-1], corners[-8], corners[-15]
-    ])
-    pink_blue2 = estimate_next_corner([
-        corners[-7], corners[-14], corners[-21]
-    ])
-
-    # get the intersections of the 8 points and therefore get the top left,
-    # top right and bottom left and bottom right corners
-    red_intersection1 = get_intersect(back_red, front_pink,
-                                      red_orange1, red_orange2, integer=True)
-    red_intersection2 = get_intersect(front_red, back_pink,
-                                      red_orange1, red_orange2, integer=True)
-    pink_intersection1 = get_intersect(back_red, front_pink,
-                                       pink_blue1, pink_blue2, integer=True)
-    pink_intersection2 = get_intersect(front_red, back_pink,
-                                       pink_blue1, pink_blue2, integer=True)
-
-    if display_points:
-        # display the 8 points
-        cv2.circle(image, (front_pink[0], front_pink[1]), 3, 255, -1)
-        cv2.circle(image, (back_pink[0], back_pink[1]), 3, 255, -1)
-        cv2.circle(image, (front_red[0], front_red[1]), 3, 255, -1)
-        cv2.circle(image, (back_red[0], back_red[1]), 3, 255, -1)
-        cv2.circle(image, (red_orange1[0], red_orange1[1]), 3, 255, -1)
-        cv2.circle(image, (red_orange2[0], red_orange2[1]), 3, 255, -1)
-        cv2.circle(image, (pink_blue1[0], pink_blue1[1]), 3, 255, -1)
-        cv2.circle(image, (pink_blue2[0], pink_blue2[1]), 3, 255, -1)
-
-        # display intersection points
-        cv2.circle(image, (int(red_intersection1[0]),
-                           int(red_intersection1[1])), 3, (255, 255, 255), -1)
-        cv2.circle(image, (int(red_intersection2[0]),
-                           int(red_intersection2[1])), 3, (255, 255, 255), -1)
-        cv2.circle(image, (int(pink_intersection1[0]),
-                           int(pink_intersection1[1])), 3, (255, 255, 255), -1)
-        cv2.circle(image, (int(pink_intersection2[0]),
-                           int(pink_intersection2[1])), 3, (255, 255, 255), -1)
-
-    return [
-        red_intersection1,
-        red_intersection2,
-        pink_intersection1,
-        pink_intersection2
-    ]
 
 
 def get_intersect(a1, a2, b1, b2, integer=False):
@@ -190,6 +149,61 @@ def get_intersect(a1, a2, b1, b2, integer=False):
     if integer:
         return [int(x/z), int(y/z)]
     return (x/z, y/z)
+
+def get_intersections(lines):
+    ret_obj = []
+    """
+    ret_obj = [
+        {
+            line: LINE_INDEX,
+            intersections: [
+                {
+                    line: LINE_INDEX,
+                    position: [x, y]
+                }
+            ]
+        }
+    ]
+    """
+    if lines is not None:
+        for i, line in enumerate(lines):
+            line_intersections = []
+            x1, y1, x2, y2 = line
+            for j, nline in enumerate(lines):
+                if j==i:
+                    continue
+                nx1, ny1, nx2, ny2 = nline
+                px, py = get_intersect([x1, y1], [x2, y2], [nx1, ny1], [nx2, ny2])
+
+                if px != float('inf') and py != float('inf'):
+                    line_intersections.append({
+                        "line": j,
+                        "position": [px, py]
+                    })
+
+            ret_obj.append(
+                {
+                    "line": i,
+                    "intersections": line_intersections
+                }
+            )
+
+    return ret_obj
+
+
+def filter_intersections(intersections, image, display=False):
+    height, width, _ = image.shape
+    # filter intersections that are not in the image
+    for i, line in enumerate(intersections):
+        to_be_removed = []
+        for intersec in line["intersections"]:
+            if intersec["position"][0] < 0 or intersec["position"][1] < 0 or intersec["position"][0] > width or intersec["position"][1] > height:
+                to_be_removed.append(intersec)
+            else:
+                if display:
+                    cv2.circle(image, (int(intersec["position"][0]), int(intersec["position"][1])), 5, (255, 255, 255))
+        for remove in to_be_removed:
+            intersections[i]["intersections"].remove(remove)
 
 
 def get_chessboard_perspective(image, pts):
@@ -250,99 +264,12 @@ def get_chessboard_perspective(image, pts):
     return cv2.warpPerspective(image, M, (highest_value, highest_value))
 
 
-def get_chessboard_squares(chessboard_perspective, size=(8, 8)):
-    # retrieve the heigth and with information
-    heigth, width, _ = chessboard_perspective.shape
 
-    white_color_mask = ColorDetector.get_color_mask(chessboard_perspective,
-                                                    HSV_WHITE_SQUARE_LOWER,
-                                                    HSV_WHITE_SQUARE_UPPER)
-
-    black_color_mask = ColorDetector.get_color_mask(chessboard_perspective,
-                                                    HSV_BLACK_SQUARE_LOWER,
-                                                    HSV_BLACK_SQUARE_UPPER)
-
-    squares = []
-
-    # split the image into the individual squares based of the size
-    y, x = 0, 0
-    for i in range(size[0]):
-        x = 0
-        for j in range(size[1]):
-            # current square heigth and width
-            square_h = int(heigth * (i+1)/8)
-            square_w = int(width * (j+1)/8)
-
-            # detect if the square is black or white
-            isWhite = ColorDetector.has_area_color(
-                white_color_mask[y:square_h, x:square_w],
-                SQUARE_COLOR_THRESHOLD)
-
-            if isWhite:
-                squares.append(
-                    SquareColor.WHITE
-                )
-            # both color were detected or none
-            else:
-                squares.append(
-                    SquareColor.BLACK
-                )
-
-            if DEBUG:
-                print(squares[-1])
-                cv2.imshow("Undefined square", chessboard_perspective[y:square_h, x:square_w])
-                cv2.imshow("Undefined square white", white_color_mask[y:square_h, x:square_w])
-                if cv2.waitKey(0) & 0xff == 27:
-                    cv2.destroyAllWindows()
-            x = square_w
-        y = square_h
-
-    return squares
-
-
-def get_corners(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    MAX_CORNERS:int = 1000
-    QUALITY_LEVEL:float = 0.001
-    MIN_DISTANCE:int = 15
-    return cv2.goodFeaturesToTrack(gray, MAX_CORNERS, QUALITY_LEVEL, MIN_DISTANCE, useHarrisDetector=True)
-
-
-# getting lines based on Hough Lines
-def get_lines(image):
-    rho = 1  # distance resolution in pixels of the Hough grid
-    theta = np.pi / 180  # angular resolution in radians of the Hough grid
-    threshold = 75  # minimum number of votes (intersections in Hough grid cell)
-    min_line_length = 100  # minimum number of pixels making up a line
-    max_line_gap = 100000  # maximum gap in pixels between connectable line segments
-    lines = cv2.HoughLinesP(image, rho, theta, threshold, np.array([]),
-                        min_line_length, max_line_gap)
-
-    return lines
-
-
-def get_intersections(lines):
-    ret_intersections = []
-    if lines is not None:
-        for line in lines:
-            for x1,y1,x2,y2 in line:
-                for nline in lines:
-                    for nx1,ny1,nx2,ny2 in nline:
-                        px, py = get_intersect([x1, y1], [x2, y2], [nx1, ny1], [nx2, ny2])
-
-                        if px != float('inf') and py != float('inf'):
-                            ret_intersections.append([px, py])
-
-    return ret_intersections
-
-
-def is_close_to(point1, point2):
-    diff = 4 # 4pixels
-
+def is_close_to(point1, point2, radian=4):
     p1x, p1y = point1
     p2x, p2y = point2
 
-    if abs(p1x - p2x) <= diff and abs(p1y - p2y) <= diff:
+    if abs(p1x - p2x) <= radian and abs(p1y - p2y) <= radian:
         return True
     return False
 
