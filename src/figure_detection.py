@@ -3,7 +3,7 @@ import numpy as np
 import math
 
 
-def find_circles(image, param1=150, param2=15, minRadius=0, maxRadius=30):
+def find_circles(image, rho=1, mindist=40, param1=150, param2=15, minRadius=0, maxRadius=30):
     """Find circles inside an image based on HoughCricle
 
     Arguments:
@@ -22,7 +22,7 @@ def find_circles(image, param1=150, param2=15, minRadius=0, maxRadius=30):
     """
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     circles = cv2.HoughCircles(
-        gray, cv2.HOUGH_GRADIENT, 1, 40,
+        gray, cv2.HOUGH_GRADIENT, rho, mindist,
         param1=param1, param2=param2, minRadius=minRadius,
         maxRadius=maxRadius
     )

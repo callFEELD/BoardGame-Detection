@@ -8,6 +8,10 @@ import time
 class Detector:
     debug = True
     layers = []
+    default_options = {}
+
+    def __init__(self):
+        self.options = self.default_options
 
     def set_debug(self, boolean: bool):
         self.debug = boolean
@@ -23,6 +27,9 @@ class Detector:
     def show_debug_layers(self):
         for layer in self.layers:
             cv2.imshow(layer["name"], layer["image"])
+
+    def update_options(self, options):
+        self.options.update(options)
 
 
 class BoardDetector(Detector):
@@ -55,10 +62,7 @@ class BoardDetector(Detector):
     }
 
     def __init__(self):
-        self.options = self.default_options
-
-    def update_options(self, options):
-        self.options.update(options)
+        super().__init__()
 
     def _prepare_image(self, frame):
         opt = self.options["prepare"]
@@ -231,18 +235,57 @@ class BoardDetector(Detector):
 
 
 class FigureDetector(Detector):
+    default_options = {
+        "circles": {
+            "rho": 1,
+            "mindist": 40,
+            "param1": 150,
+            "param2": 15,
+            "minradius": 0,
+            "maxradius": 30
+        },
+        "colors": {
+            "white": {
+                "normal": {
+                    "lower": [1, 2, 3],
+                    "upper": [4, 5, 6]
+                },
+                "king": {
+                    "lower": [1, 2, 3],
+                    "upper": [4, 5, 6]
+                },
+            },
+            "black": {
+                "normal": {
+                    "lower": [1, 2, 3],
+                    "upper": [4, 5, 6]
+                },
+                "king": {
+                    "lower": [1, 2, 3],
+                    "upper": [4, 5, 6]
+                }
+            }
+        }
+    }
 
     def __init__(self):
-        pass
+        super().__init__()
 
     def find_circles(self, board_perspective):
+        opt = self.options["circles"]
+
         self.debug_image = board_perspective.copy()
-        self.hough_circles = fd.find_circles(board_perspective)
+        self.hough_circles = fd.find_circles(
+            board_perspective, rho=opt["rho"], mindist=opt["mindist"],
+            param1=opt["param1"], param2=opt["param2"],
+            minRadius=opt["minradius"], maxRadius=opt["maxRadius"]
+        )
+
         circles = []
-        for i in self.hough_circles[0,:]:
+        for i in self.hough_circles[0, :]:
             circles.append({"x": i[0], "y": i[1], "r": i[2]})
-            cv2.circle(self.debug_image,(i[0],i[1]),i[2],(0,255,0),2)
-            cv2.circle(self.debug_image,(i[0],i[1]),2,(0,0,255),3)
+            cv2.circle(self.debug_image, (i[0], i[1]), i[2], (0, 255, 0), 2)
+            cv2.circle(self.debug_image, (i[0], i[1]), 2, (0 ,0, 255), 3)
 
         self.add_debug_layer("find circles")
         return circles

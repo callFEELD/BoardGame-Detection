@@ -58,24 +58,34 @@ default_options = {
         }
     },
     "figuredetector": {
-        "white": {
-            "normal": {
-                "lower": [1, 2, 3],
-                "upper": [4, 5, 6]
-            },
-            "king": {
-                "lower": [1, 2, 3],
-                "upper": [4, 5, 6]
-            },
+        "circles": {
+            "rho": 1,
+            "mindist": 40,
+            "param1": 150,
+            "param2": 15,
+            "minradius": 0,
+            "maxradius": 30
         },
-        "black": {
-            "normal": {
-                "lower": [1, 2, 3],
-                "upper": [4, 5, 6]
+        "colors": {
+            "white": {
+                "normal": {
+                    "lower": [1, 2, 3],
+                    "upper": [4, 5, 6]
+                },
+                "king": {
+                    "lower": [1, 2, 3],
+                    "upper": [4, 5, 6]
+                },
             },
-            "king": {
-                "lower": [1, 2, 3],
-                "upper": [4, 5, 6]
+            "black": {
+                "normal": {
+                    "lower": [1, 2, 3],
+                    "upper": [4, 5, 6]
+                },
+                "king": {
+                    "lower": [1, 2, 3],
+                    "upper": [4, 5, 6]
+                }
             }
         }
     }
