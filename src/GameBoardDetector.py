@@ -1,10 +1,8 @@
 import cv2
-from src.board_detection import board_detection as bd
+from src import board_detection as bd
 from src import figure_detection as fd
-from src import ColorDetector
 import math
 import time
-import numpy as np
 
 
 class Detector:

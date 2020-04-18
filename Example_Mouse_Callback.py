@@ -8,7 +8,7 @@ Example Mouse Callback
 """
 
 # Imports
-from src.board_detection import board_detection as bd
+from src import board_detection as bd
 import cv2
 
 
