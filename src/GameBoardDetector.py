@@ -1,6 +1,8 @@
 import cv2
+import numpy as np
 from src import board_detection as bd
 from src import figure_detection as fd
+from src import ColorDetector
 import math
 import time
 
@@ -247,8 +249,8 @@ class FigureDetector(Detector):
         "colors": {
             "white": {
                 "normal": {
-                    "lower": [1, 2, 3],
-                    "upper": [4, 5, 6]
+                    "lower": [12, 60, 150],
+                    "upper": [60, 255, 255]
                 },
                 "king": {
                     "lower": [1, 2, 3],
@@ -267,6 +269,7 @@ class FigureDetector(Detector):
             }
         }
     }
+    board_perspective = None
 
     def __init__(self):
         super().__init__()
@@ -275,10 +278,11 @@ class FigureDetector(Detector):
         opt = self.options["circles"]
 
         self.debug_image = board_perspective.copy()
+        self.board_perspective = board_perspective.copy()
         self.hough_circles = fd.find_circles(
             board_perspective, rho=opt["rho"], mindist=opt["mindist"],
             param1=opt["param1"], param2=opt["param2"],
-            minRadius=opt["minradius"], maxRadius=opt["maxRadius"]
+            minRadius=opt["minradius"], maxRadius=opt["maxradius"]
         )
 
         circles = []
@@ -300,12 +304,46 @@ class FigureDetector(Detector):
                         positions.append([r, i])
         return positions
 
+    def find_pieces_team(self, fig_pos):
+        opt = self.options["colors"]
+        white_mask = ColorDetector.get_color_mask(
+            self.board_perspective,
+            np.array(opt["white"]["normal"]["lower"]),
+            np.array(opt["white"]["normal"]["upper"])
+        )
+        self.debug_image = white_mask.copy()
+        self.add_debug_layer("White Normal")
+        white_king_mask = ColorDetector.get_color_mask(
+            self.board_perspective,
+            np.array(opt["white"]["king"]["lower"]),
+            np.array(opt["white"]["king"]["upper"])
+        )
+        self.debug_image = white_king_mask.copy()
+        self.add_debug_layer("White King")
+        black_mask = ColorDetector.get_color_mask(
+            self.board_perspective,
+            np.array(opt["black"]["normal"]["lower"]),
+            np.array(opt["black"]["normal"]["upper"])
+        )
+        self.debug_image = black_mask.copy()
+        self.add_debug_layer("Black Normal")
+        black_king_mask = ColorDetector.get_color_mask(
+            self.board_perspective,
+            np.array(opt["black"]["king"]["lower"]),
+            np.array(opt["black"]["king"]["upper"])
+        )
+        self.debug_image = black_king_mask.copy()
+        self.add_debug_layer("Black King")
+
+
     def find_pieces(self, board_perspective):
-        # frist find the circles on the board
+        # first find the circles on the board
         circles = self.find_circles(board_perspective)
         # divide the board into the 8x8 grid
         squares, square_pos = bd.divide_chessboard(board_perspective)
         # find which circle is on wich square
-        fig = self.find_piece_chessboard_position(circles, square_pos)
+        fig_pos = self.find_piece_chessboard_position(circles, square_pos)
+        # get the team colors for each piece
+        self.find_pieces_team(fig_pos)
 
-        return fig
+        return fig_pos
