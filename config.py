@@ -69,8 +69,8 @@ default_options = {
         "colors": {
             "white": {
                 "normal": {
-                    "lower": [1, 2, 3],
-                    "upper": [4, 5, 6]
+                    "lower": [12, 60, 150],
+                    "upper": [60, 255, 255]
                 },
                 "king": {
                     "lower": [1, 2, 3],
