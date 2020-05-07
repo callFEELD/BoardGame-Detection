@@ -22,7 +22,7 @@ def pick_color(event,x,y,flags,param):
         lower =  np.array([pixel[0] - 10, pixel[1] - 10, pixel[2] - 40])
         print(lower, upper)
 
-        #A MONOCHROME MASK FOR GETTING A BETTER VISION OVER THE COLORS 
+        #A MONOCHROME MASK FOR GETTING A BETTER VISION OVER THE COLORS
         image_mask = cv2.inRange(image_hsv,lower,upper)
         cv2.imshow("Mask",image_mask)
 

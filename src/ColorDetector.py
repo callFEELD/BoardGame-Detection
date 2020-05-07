@@ -10,7 +10,7 @@ Color Detector
 import cv2
 import numpy as np
 
-KERNEL = np.ones((5, 5), np.uint8)
+KERNEL = np.ones((3, 3), np.uint8)
 
 
 def get_color_mask(image, hsv_color_lower, hsv_color_upper):
