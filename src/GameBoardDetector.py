@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from src import board_detection as bd
 from src import figure_detection as fd
+from src.interface import Piece
 from src import ColorDetector
 import math
 import time
@@ -249,22 +250,22 @@ class FigureDetector(Detector):
         "colors": {
             "white": {
                 "normal": {
-                    "lower": [12, 60, 150],
-                    "upper": [60, 255, 255]
+                    "lower": [163, 94, 148],
+                    "upper": [183, 114, 228]
                 },
                 "king": {
-                    "lower": [1, 2, 3],
-                    "upper": [4, 5, 6]
+                    "lower": [115, 64, 125],
+                    "upper": [149, 84, 205]
                 },
             },
             "black": {
                 "normal": {
-                    "lower": [1, 2, 3],
-                    "upper": [4, 5, 6]
+                    "lower": [153, 101, 84],
+                    "upper": [173, 121, 164]
                 },
                 "king": {
-                    "lower": [1, 2, 3],
-                    "upper": [4, 5, 6]
+                    "lower": [159, 124, 162],
+                    "upper": [179, 144, 242]
                 }
             }
         }
@@ -274,7 +275,14 @@ class FigureDetector(Detector):
     def __init__(self):
         super().__init__()
 
+    def to_1_32_position(self, row_cell: list):
+        row = row_cell[0]
+        cell = row_cell[1]
+        return int( (row * 4) + math.ceil((cell + 1) /2) )
+
     def find_circles(self, board_perspective):
+        self.debug_image = board_perspective.copy()
+        self.add_debug_layer("board perspective")
         opt = self.options["circles"]
 
         self.debug_image = board_perspective.copy()
@@ -301,7 +309,10 @@ class FigureDetector(Detector):
                 for piece in pieces:
                     if piece["x"] >= square["x"][0] and piece["x"] <= square["x"][1] \
                         and piece["y"] >= square["y"][0] and piece["y"] <= square["y"][1]:
-                        positions.append([r, i])
+                        positions.append({
+                            "circle": piece,
+                            "position": [r, i]
+                        })
         return positions
 
     def find_pieces_team(self, fig_pos):
@@ -335,6 +346,45 @@ class FigureDetector(Detector):
         self.debug_image = black_king_mask.copy()
         self.add_debug_layer("Black King")
 
+        pieces = []
+
+        for figure in fig_pos:
+            r = figure["circle"]["r"]
+            x = figure["circle"]["x"]
+            y = figure["circle"]["y"]
+
+            wm_circle = fd.get_circle_img(white_mask, r, x, y)
+            wkm_circle = fd.get_circle_img(white_king_mask, r, x, y)
+            bm_circle = fd.get_circle_img(black_mask, r, x, y)
+            bkm_circle = fd.get_circle_img(black_king_mask, r, x, y)
+
+            wm_per = cv2.countNonZero(wm_circle)
+            wkm_per = cv2.countNonZero(wkm_circle)
+            bm_per = cv2.countNonZero(bm_circle)
+            bkm_per = cv2.countNonZero(bkm_circle)
+            per_list = [wm_per, wkm_per, bm_per, bkm_per]
+
+            max_per = max(per_list)
+
+            if per_list.index(max_per) == 0:
+                king = False
+                team = 1
+            elif per_list.index(max_per) == 1:
+                king = True
+                team = 1
+            elif per_list.index(max_per) == 2:
+                king = False
+                team = 2
+            else:
+                king = True
+                team = 2
+
+            position = self.to_1_32_position(figure["position"])
+
+            new_piece = Piece(position=position, player=team, king=king)
+            pieces.append(new_piece.to_dict())
+
+        return pieces
 
     def find_pieces(self, board_perspective):
         # first find the circles on the board
@@ -344,6 +394,6 @@ class FigureDetector(Detector):
         # find which circle is on wich square
         fig_pos = self.find_piece_chessboard_position(circles, square_pos)
         # get the team colors for each piece
-        self.find_pieces_team(fig_pos)
+        pieces = self.find_pieces_team(fig_pos)
 
-        return fig_pos
+        return pieces
