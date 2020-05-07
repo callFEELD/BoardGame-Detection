@@ -14,13 +14,17 @@ class Client:
     token: str = None
     timeout: int = 30
     headers: dict = None
+    image_file: str = None
 
     def __init__(self, url=None, token=None):
         self.set_url(url)
         self.set_token(token)
 
+    def set_image_file(self, image_file):
+        self.image_file = image_file
+
     def get_image(self):
-        image = Image.open("Unbenannt.JPG")
+        image = Image.open(self.image_file)
         image = image.rotate(self.rotation)
         image = np.array(image)
         # Convert RGB to BGR
