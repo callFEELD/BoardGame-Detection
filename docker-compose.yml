@@ -1,0 +1,9 @@
+version: '3.0'
+services:
+  board-detection:
+    build: .
+    environment:
+      - auth_token=a_random_token_please
+    ports:
+      - 80:80
+  

@@ -69,4 +69,7 @@ async def debug_analyse_board(data: Analyze):
             "debug": debug_layers
         }
     else:
-        return None
+        return {
+            "pieces": None,
+            "debug": debug_layers
+        }

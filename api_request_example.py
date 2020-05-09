@@ -4,7 +4,7 @@ import cv2
 
 
 client = StreamClient()
-client.set_token('123456789')
+client.set_token('a_random_token_please')
 client.set_url('http://127.0.0.1/debuganalyse')
 client.set_stream_url('http://192.168.255.10:8000/stream.mjpg')
 
