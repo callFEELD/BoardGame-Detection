@@ -24,20 +24,30 @@ sudo apt-get install python-pil
 ```
 
 #### Python dependencies
-+ `picamera`
-+ `Pillow`
 + `numpy`
++ `pillow`
 + `aiohttp`
++ `picamera`
 
 ```python
-from src.api.piclient import PiClient
+from client.src.piclient import PiClient
 
-client = PiClient() # this also initializes and starts the picamera
-client.set_token('123456789')
-client.set_url('http://127.0.0.1/analyse')
+# Setup the PiClient
+client = PiClient(
+    url='http://127.0.0.1',
+    token='a_random_token_please'
+)
 
-print(client.detect())
-# Either none or a list with Pieces
+# Ping the API server to check its uptime
+#   This will return either True or False
+print(client.ping())
+
+# Send an image to detect the figures
+#   This will return two variables
+#       1. the list of pieces for the game logic
+#       2. debug infos, if client.detect(debug=True)
+pieces, _ = client.detect()
+print(pieces)
 ```
 
 ### StreamClient
@@ -45,21 +55,32 @@ The StreamClient can sit anywhere. It can access a video stream of another devic
 It will take the latest frame of the stream and sends it to the API Server.
 
 #### Python dependencies
++ `numpy`
++ `pillow`
++ `aiohttp`
 + `opencv-python`
 + `imutils`
-+ `numpy`
-+ `aiohttp`
 
 ```python
-from src.api.client import StreamClient
+from client.src.streamclient import StreamClient
 
-client = StreamClient()
-client.set_token('123456789')
-client.set_url('http://127.0.0.1/analyse')
-client.set_stream_url('http://127.0.0.1:8000/image.mjpg')
+# Setup the StreamClient
+client = StreamClient(
+    url='http://127.0.0.1',
+    token='a_random_token_please',
+    stream_url='http://127.0.0.1:8000/stream.mjpg'
+)
 
-print(client.detect())
-# Either none or a list with Pieces
+# Ping the API server to check its uptime
+#   This will return either True or False
+print(client.ping())
+
+# Send an image to detect the figures
+#   This will return two variables
+#       1. the list of pieces for the game logic
+#       2. debug infos, if client.detect(debug=True)
+pieces, _ = client.detect()
+print(pieces)
 ```
 
 ## Server
