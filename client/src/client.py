@@ -1,4 +1,4 @@
-from client.src.utils import img2str
+from .utils import img2str
 
 import asyncio
 from PIL import Image

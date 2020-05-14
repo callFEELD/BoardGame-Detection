@@ -1,4 +1,4 @@
-from client.src.client import Client
+from .client import Client
 
 from picamera import PiCamera
 import time
