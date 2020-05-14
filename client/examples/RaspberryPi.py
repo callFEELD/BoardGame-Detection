@@ -1,4 +1,4 @@
-from client.src.piclient import PiClient
+from ..src.piclient import PiClient
 
 # Setup the PiClient
 client = PiClient(

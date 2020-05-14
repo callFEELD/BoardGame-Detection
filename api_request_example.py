@@ -1,5 +1,5 @@
 from client.src.streamclient import StreamClient
-from src.api.utils import str2img
+from client.src.utils import str2img
 import cv2
 
 
