@@ -11,7 +11,7 @@ class PiClient(Client):
     resolution: tuple = (1080, 1080)
 
     def __init__(self, url=None, token=None):
-        super.__init__(url=url, token=token)
+        super().__init__(url=url, token=token)
         self.init_picamera()
 
     def init_picamera(self):
@@ -25,7 +25,7 @@ class PiClient(Client):
         self.camera.capture(file)
         file.close()
 
-        image = Image.open("Unbenannt.JPG")
+        image = Image.open(self.filename)
         image = image.rotate(self.rotation)
         image = np.array(image)
         # Convert RGB to BGR
