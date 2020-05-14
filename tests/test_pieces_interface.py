@@ -1,5 +1,5 @@
 import unittest
-from src.interface import Piece,\
+from server.src.interface import Piece,\
     InvalidPlayer, InvalidPiecePosition
 
 
