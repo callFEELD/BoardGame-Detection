@@ -1,0 +1,11 @@
+numpy>=1.17.3
+pillow
+aiohttp
+
+# Only necessary when using the PiClient
+picamera
+
+# Only necessary when using the StreamClient
+
+# opencv-python>=4.1.1
+# imutils

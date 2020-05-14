@@ -1,9 +1,9 @@
+from client.src.client import Client
+
 from picamera import PiCamera
 import time
 from PIL import Image
 import numpy as np
-
-from src.api.client import Client
 
 
 class PiClient(Client):
@@ -11,7 +11,7 @@ class PiClient(Client):
     resolution: tuple = (1080, 1080)
 
     def __init__(self, url=None, token=None):
-        super.__init__()
+        super.__init__(url=url, token=token)
         self.init_picamera()
 
     def init_picamera(self):
