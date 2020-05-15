@@ -368,16 +368,16 @@ class FigureDetector(Detector):
 
             if per_list.index(max_per) == 0:
                 king = False
-                team = 1
+                team = 2
             elif per_list.index(max_per) == 1:
                 king = True
-                team = 1
+                team = 2
             elif per_list.index(max_per) == 2:
                 king = False
-                team = 2
+                team = 1
             else:
                 king = True
-                team = 2
+                team = 1
 
             position = self.to_1_32_position(figure["position"])
 
