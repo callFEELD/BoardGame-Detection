@@ -4,7 +4,9 @@ from fastapi import APIRouter, Response
 from src.GameBoardDetector import BoardDetector, FigureDetector
 from src.api.endpoints.models import Analyze
 from src.api.utils import str2img, img2str
+import gc
 
+gc.enable()
 router = APIRouter()
 
 
@@ -16,11 +18,11 @@ async def ping_pong(response: Response):
 
 @router.post('/analyse')
 async def analyse_board(data: Analyze):
-    image = str2img(data.image)
-    options = data.options
-
     gbd = BoardDetector()
     gfd = FigureDetector()
+
+    image = str2img(data.image)
+    options = data.options
 
     if options is not None:
         gbd.update_options(options.boarddetector)
@@ -30,18 +32,28 @@ async def analyse_board(data: Analyze):
 
     if board_perspective is not None:
         pieces = gfd.find_pieces(board_perspective)
+        gfd.clear_memory()
+        gbd.clear_memory()
+        del gfd
+        del gbd
+
         return pieces
     else:
+        gfd.clear_memory()
+        gbd.clear_memory()
+        del gfd
+        del gbd
+
         return None
 
 
 @router.post('/debuganalyse')
 async def debug_analyse_board(data: Analyze):
-    image = str2img(data.image)
-    options = data.options
-
     gbd = BoardDetector()
     gfd = FigureDetector()
+
+    image = str2img(data.image)
+    options = data.options
 
     if options is not None:
         gbd.update_options(options.boarddetector)
@@ -53,7 +65,7 @@ async def debug_analyse_board(data: Analyze):
     for layer in gbd.layers:
         debug_layers.append({
             "name": layer["name"],
-            "img": img2str(layer["image"])
+            "img": img2str(layer["image"].copy())
         })
 
     if board_perspective is not None:
@@ -64,11 +76,22 @@ async def debug_analyse_board(data: Analyze):
                 "img": img2str(layer["image"])
             })
 
+        gfd.clear_memory()
+        gbd.clear_memory()
+        del gfd
+        del gbd
+
         return {
             "pieces": pieces,
             "debug": debug_layers
         }
     else:
+        gfd.clear_memory()
+        gbd.clear_memory()
+        del gfd
+        del board_perspective
+        del gbd
+
         return {
             "pieces": None,
             "debug": debug_layers

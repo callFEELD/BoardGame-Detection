@@ -10,10 +10,11 @@ import time
 
 class Detector:
     debug = True
-    layers = []
     default_options = {}
+    debug_image = None
 
     def __init__(self):
+        self.layers = []
         self.options = self.default_options
 
     def set_debug(self, boolean: bool):
@@ -33,6 +34,14 @@ class Detector:
 
     def update_options(self, options):
         self.options.update(options)
+
+    def clear_debug_memory(self):
+        for layer in self.layers:
+            if "image" in layer:
+                del layer["image"]
+
+    def clear_memory(self):
+        self.clear_debug_memory()
 
 
 class BoardDetector(Detector):
@@ -66,6 +75,20 @@ class BoardDetector(Detector):
 
     def __init__(self):
         super().__init__()
+
+    def clear_memory(self):
+        self.clear_debug_memory()
+
+        if self.debug_image is not None:
+            del self.debug_image
+        if self.frame is not None:
+            del self.frame
+        if self.res_frame is not None:
+            del self.res_frame
+        if self.cframe is not None:
+            del self.cframe
+        if self.gray_frame is not None:
+            del self.gray_frame
 
     def _prepare_image(self, frame):
         opt = self.options["prepare"]
@@ -274,6 +297,14 @@ class FigureDetector(Detector):
 
     def __init__(self):
         super().__init__()
+
+    def clear_memory(self):
+        self.clear_debug_memory()
+
+        if self.debug_image is not None:
+            del self.debug_image
+        if self.board_perspective is not None:
+            del self.board_perspective
 
     def to_1_32_position(self, row_cell: list):
         row = row_cell[0]
