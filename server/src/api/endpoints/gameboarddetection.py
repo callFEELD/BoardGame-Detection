@@ -4,9 +4,8 @@ from fastapi import APIRouter, Response
 from src.GameBoardDetector import BoardDetector, FigureDetector
 from src.api.endpoints.models import Analyze
 from src.api.utils import str2img, img2str
-import gc
 
-gc.enable()
+
 router = APIRouter()
 
 
