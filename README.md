@@ -1,5 +1,6 @@
 # BoardGame-Detection
 ![CI](https://github.com/callFEELD/BoardGame-Detection/workflows/CI/badge.svg)
+![Docker Image CI](https://github.com/callFEELD/BoardGame-Detection/workflows/Docker%20Image%20CI/badge.svg)
 
 ## Client Server Architecture
 1. The client will send an image to the API server.
