@@ -15,4 +15,4 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Run docker-compose
-      run: cd server && docker-compose up --build && docker-compose down
+      run: cd server && docker-compose up --build -d && sleep 10 && docker-compose down
