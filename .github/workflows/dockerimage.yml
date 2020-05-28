@@ -22,3 +22,6 @@ jobs:
       run: docker ps -a
     - name: Check if container is alive
       run: cd server && docker-compose exec -T board-detection echo "I am up"
+    - name: Get Failed logs
+      if: ${{ failure() }}
+      run: cd server && docker-compose logs
