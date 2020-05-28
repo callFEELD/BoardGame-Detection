@@ -14,5 +14,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Run docker-compose
-      run: cd server && docker-compose up --build -d && sleep 10 && docker-compose down
+    - name: Build Docker Image
+      run: cd server && docker-compose up -d
+    - name: Ping Test API
+      run: docker run --network container:board-detection appropriate/curl -s --retry 10 --retry-connrefused http://localhost:80/
