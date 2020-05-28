@@ -16,3 +16,5 @@ jobs:
     - uses: actions/checkout@v2
     - name: Build the Docker image
       run: cd server && docker build . --file Dockerfile --tag board-detection:$(date +%s)
+    - name: Run docker-compose
+      run: docker-compose up --build && docker-compose down
