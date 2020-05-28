@@ -9,12 +9,16 @@ on:
 jobs:
 
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
-    - name: Build Docker Image
+    - name: Run docker-compose
       run: cd server && docker-compose up -d
-    - name: Ping Test API
-      run: docker run --network container:board-detection appropriate/curl -s --retry 10 --retry-connrefused http://localhost:80/
+    - name: Sleep for 30 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '30s'
+    - name: Check running containers
+      run: docker ps -a
+    - name: Check if container is alive
+      run: cd server && docker-compose exec board-detection echo "I am up"
