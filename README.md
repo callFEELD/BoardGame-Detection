@@ -7,7 +7,7 @@
 2. The server will response with the found pieces on the board
 
 ## Client
-There are to main clients:
+There are two main clients:
 + Raspberry Pi Client `PiClient`
 + `StreamClient`
 
